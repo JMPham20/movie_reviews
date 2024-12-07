@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage - MovieMania</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Greatest Movie Reviews</h1>
+        <nav>
+            <a href="index.html">Home</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Your Favorite Movies</h2>
+        <p>Explore movies, read reviews, and share your thoughts!</p>
+        
+        <!-- Logout Button -->
+        <form action="logout.php" method="POST">
+            <button type="submit">Logout</button>
+        </form>
+
+        <!-- Movie Search -->
+        <h2>Search for Movies</h2>
+        <form action="search_movies.php" method="POST">
+            <input type="text" name="search_term" placeholder="Enter movie title or genre" required>
+            <button type="submit">Search</button>
+        </form>
+
+        <h3>Movie Results:</h3>
+        <div class="movies">
+            <?php
+            include 'db_connection.php';
+
+            if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['search_term'])) {
+                $search_term = "%" . $_POST['search_term'] . "%";
+                $sql = "SELECT tv.title, tv.start_year, te.season_number, te.episode_number
+                        FROM TV_Series tv
+                        LEFT JOIN TV_Episode te ON tv.title_id = te.tv_series_id
+                        WHERE tv.title LIKE ? OR tv.genres LIKE ?";
+
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ss", $search_term, $search_term);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<p><strong>" . $row['title'] . "</strong> - Year: " . $row['start_year'] . " - Season: " . $row['season_number'] . " - Episode: " . $row['episode_number'] . "</p>";
+                    }
+                } else {
+                    echo "<p>No movies found.</p>";
+                }
+
+                $stmt->close();
+            }
+            ?>
+        </div>
+
+        <!-- People Search -->
+        <h2>Search for People</h2>
+        <form action="search_people.php" method="POST">
+            <input type="text" name="search_term" placeholder="Enter actor or director name" required>
+            <button type="submit">Search</button>
+        </form>
+
+        <h3>People Results:</h3>
+        <div class="people">
+            <?php
+            if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['search_term'])) {
+                $search_term = "%" . $_POST['search_term'] . "%";
+                $sql = "SELECT name, birth_year, known_for_titles FROM Person WHERE name LIKE ?";
+
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("s", $search_term);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<p><strong>" . $row['name'] . "</strong> - Born: " . $row['birth_year'] . "<br>Known For: " . $row['known_for_titles'] . "</p>";
+                    }
+                } else {
+                    echo "<p>No people found.</p>";
+                }
+
+                $stmt->close();
+            }
+            ?>
+        </div>
+    </main>
+
+    <footer>
+        <p>Created by: John Pham</p>
+    </footer>
+</body>
+</html>
